@@ -1,0 +1,28 @@
+{
+  "name": "discord-plugins",
+  "version": "0.0.0",
+  "description": "Plugins for discord.js",
+  "author": {
+    "name": "Markus Tran",
+    "email": "thebluepillow@gmail.com",
+    "url": "http://pillowfication.com"
+  },
+  "homepage": "https://github.com/pillowfication/discord-plugins",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/pillowfication/discord-plugins.git"
+  },
+  "bugs": {
+    "url": "https://github.com/pillowfication/discord-plugins/issues"
+  },
+  "main": "index.js",
+  "dependencies": {},
+  "peerDependencies": {
+    "discord.js": "^11.1.0"
+  },
+  "devDependencies": {
+    "discord.js": "^11.1.0",
+    "eslint": "^3.18.0",
+    "eslint-config-pf": "1.0.7"
+  }
+}
