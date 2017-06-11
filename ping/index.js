@@ -7,7 +7,8 @@ module.exports = function ping(client, options) {
     onError: err => Promise.reject(err)
   }, options);
 
-  const match = createMatcher(options.match);
+  const pattern = createMatcher(options.match);
+  const match = message => pattern(message.content);
   const response = typeof options.response === 'function'
     ? options.response
     : () => String(options.response);

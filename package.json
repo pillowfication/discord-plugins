@@ -16,7 +16,9 @@
     "url": "https://github.com/pillowfication/discord-plugins/issues"
   },
   "main": "index.js",
-  "dependencies": {},
+  "dependencies": {
+    "async": "^2.4.1"
+  },
   "peerDependencies": {
     "discord.js": "^11.1.0"
   },

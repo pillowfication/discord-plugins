@@ -9,5 +9,6 @@ module.exports = {
     }
   },
 
-  ping: require('./ping')
+  ping: require('./ping'),
+  prompt: require('./prompt')
 };
