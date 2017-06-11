@@ -6,7 +6,7 @@ module.exports = {
 
     client.use = function use(plugin, options) {
       plugin(client, options);
-    }
+    };
   },
 
   ping: require('./ping'),
