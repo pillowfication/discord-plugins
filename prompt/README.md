@@ -1,6 +1,9 @@
 # prompt
 
-Adds the capability to prompt the user for a series of answers.
+Adds the capability to prompt the user for a series of answers. Care should be
+added to make sure that at most only one prompt session is active at any time.
+
+See [example.js](example.js)
 
 ## Options
 
@@ -12,12 +15,9 @@ Adds the capability to prompt the user for a series of answers.
 ```
 
  - `timeout` *(Number)*: If no responses are made within `timeout`ms, then
-    prompt exits with an error.
+    prompt exits with an error. A nonpositive `timeout` indicates no timeout.
 
-Options defined here can be overridden with options supplied to each
-`client.prompt()` call.
-
-## client.prompt(user, channel, schemas, options)
+## async prompt (user, channel, schemas, [options])
 
 **Arguments**
 
@@ -32,21 +32,6 @@ Options defined here can be overridden with options supplied to each
  - *(Promise)*: Resolves with an object containing all queried values. Throws if
     a query timed out.
 
-## client.prompt.formats
-
-An object of predefined formats.
-
- - `'email'`
- - `'ip-address'`
- - `'ipv6'`
- - `'date-time'`
- - `'date'`
- - `'time'`
- - `'color'`
- - `'host-name'`
- - `'utc-millisec'`
- - `'regex'`
-
 ## Schemas
 
 A schema represents how to resolve a query. The steps of resolution are:
@@ -54,7 +39,7 @@ A schema represents how to resolve a query. The steps of resolution are:
  1. Send user `description`.
  2. Wait for a *response*.
  3. Parse *response* by
-    - If `type === 'string'`, use `String(response)`
+    - If `type === 'string'`, use `response`
     - If `type === 'number'`, use `Number(response)`
     - If `type === 'integer'`, use `parseInt(response, 10)`
     - If `type === 'array'`, use `response.split(separator)`
@@ -90,82 +75,82 @@ A schema represents how to resolve a query. The steps of resolution are:
  - `before` *(Function)*: After the response is parsed, it is passed through
     this function before validation.
  - `pattern` *(Array|Function|RegExp|String)*: The pattern to use for
-    validation. See `utils/createMatcher.js`. Predefined formats also available
-    in `prompt.formats`.
- - `message` *(StringResolvable)*: The message to send the user if validation
-    fails, to requery.
+    validation. See `utils/create-matcher.js`.
+ - `message` *(StringResolvable)*: The message to send to requery the user if
+    validation fails.
  - `validator` *(Function)*: Custom validator function. Overrides both `pattern`
     and `message`. This function must return `false` if validation passes, or a
-    String to use as `message` if validation fails.
+    StringResolvable to use as `message` if validation fails.
 
 ## Examples
 
 ```js
-client.use(plugins.prompt);
+const plugins = require('discord-plugins')
+client.prompt = plugins.prompt
 
 // Basic functionality
-client.prompt(user, channel, 'username')
-  .then(results => { console.log(results.username); })
-  .catch(err => { console.log(err.message); })
+let schemas = [{
+  name: 'name',
+  type: 'string',
+  description: 'Please enter a name:',
+  pattern: /^[a-z ]+$/i,
+  message: 'Name can only contain letters. Try again:'
+}, {
+  name: 'age',
+  type: 'integer',
+  description: 'Now enter an age:',
+  pattern: age => age > 0,
+  message: 'That was not a valid age. Try again:'
+}]
 
-// Better example
-client.prompt(user, channel, {
-  name: 'username',
-  description: 'Please enter a username:',
-  pattern: /[A-Z]+/i,
-  message: 'Username can only contain letters. Try again:'
-});
-
-// Prompt for multiple values
-client.prompt(user, channel, [
-  {
-    name: 'username',
-    pattern: /[A-Z]+/i,
-  },
-  {
-    name: 'email',
-    pattern: plugins.prompt.formats.email
-  }
-]).then(results => {
-  console.log(`Username: ${results.username}`);
-  console.log(`Email: ${results.email}`);
-});
+client.prompt(user, channel, schemas)
+  .then(results => {
+    console.log(results.name)
+    console.log(results.age)
+  })
+  .catch(err => {
+    console.log(err.message)
+  })
 
 // Prompt for numbers
-client.prompt(user, channel, {
-  name: 'num',
+schemas = {
+  name: 'answer',
   type: 'number',
   pattern: value => !isNaN(value)
-});
+}
 
 // Prompt for specific values
-client.prompt(user, channel, {
+schemas = {
   name: 'choice',
-  description: 'Pick a number (1 - 4):',
   type: 'integer',
-  pattern: [1, 2, 3, 4]
-});
+  description: 'Pick a number (1 - 4)',
+  pattern: [ 1, 2, 3, 4 ]
+}
 
 // Prompt for an array, using a custom validator
-client.prompt(user, channel, {
-  // Using the `array` type with a custom validator
+schemas = {
   name: 'colors',
-  description: 'Give me some colors (comma separated)',
   type: 'array',
   separator: ',',
+  description: 'Give me some colors (comma separated):',
+
+  // Trim entries and remove empty ones
   before: value => value.map(entry => entry.trim()).filter(entry => entry),
+
+  // Make sure all entries are valid colors
   validator: value => {
-    if (!value.length) {
-      return 'You didn\'t provide any colors';
+    if (value.length === 0) {
+      return 'You didn\'t provide any colors! Try again:'
     }
 
+    let colorRegex = /^#[a-z0-9]{6}|#[a-z0-9]{3}|(?:rgb\(\s*(?:[+-]?\d+%?)\s*,\s*(?:[+-]?\d+%?)\s*,\s*(?:[+-]?\d+%?)\s*\))aqua|black|blue|fuchsia|gray|green|lime|maroon|navy|olive|orange|purple|red|silver|teal|white|yellow$/i
     for (const entry of value) {
-      if (!plugins.prompt.formats.color(entry)) {
-        return `\`${entry}\` is not a color`;
+      if (!colorRegex.test(entry)) {
+        return `Sorry, \`${entry}\` is not a color. Try again:`
       }
     }
 
-    return false;
+    return false
   }
-});
+}
 ```

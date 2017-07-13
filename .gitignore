@@ -1,4 +1,4 @@
 *.log
 /node_modules
 
-exampleSettings.json
+example-settings.json

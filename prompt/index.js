@@ -1,79 +1,74 @@
-const async = require('async');
-const createSchemas = require('./createSchemas');
-const formats = require('./formats');
+const createSchemas = require('./create-schemas')
 
-module.exports = function prompt(client, gOptions) {
-  gOptions = Object.assign({
-    timeout: 60 * 1000
-  }, gOptions);
+const defaultOptions = {
+  timeout: 60 * 1000
+}
 
-  client.prompt = (user, channel, schemas, options) => {
-    options = Object.assign({}, gOptions, options);
-    schemas = createSchemas(schemas);
+function getResponse (env, timeout) {
+  const { client, channel, user } = env
 
-    // Query the user for a single response
-    function getResponse(message, cb) {
-      channel.send(message).catch(err => {
-        timeoutId && clearTimeout(timeoutId);
-        client.removeListener('message', responseListener);
-        cb(err);
-      });
-      client.on('message', responseListener);
+  return new Promise((resolve, reject) => {
+    let timeoutId
 
-      const timeoutId = options.timeout !== -1 && setTimeout(() => {
-        client.removeListener('message', responseListener);
-        cb(new Error('Response timed out'));
-      }, options.timeout);
-
-      function responseListener(message) {
-        if (message.author.id === user.id && message.channel.id === channel.id) {
-          timeoutId && clearTimeout(timeoutId);
-          client.removeListener('message', responseListener);
-          cb(null, message.content);
-        }
+    // Resolve with the first response from the user
+    function responseListener (message) {
+      if (message.channel.id === channel.id && message.author.id === user.id) {
+        timeoutId && clearTimeout(timeoutId)
+        client.removeListener('message', responseListener)
+        resolve(message.content)
       }
     }
+    client.on('message', responseListener)
 
-    // Repeatedly query the user to resolve a specific schema
-    function resolveSchema(schema, cb) {
-      function _resolveSchema(message) {
-        getResponse(message, (err, response) => {
-          if (err) {
-            return cb(err);
-          }
-          response = schema.parse(response);
+    // If no response is made before `timeout`, reject
+    timeoutId = timeout > 0 && setTimeout(() => {
+      client.removeListener('message', responseListener)
+      reject(new Error('Response timed out'))
+    }, timeout)
+  })
+}
 
-          let error = schema.validator(response);
-          if (error) {
-            _resolveSchema(error);
-          }
-          else {
-            cb(null, {path: schema.path, response});
-          }
-        });
-      }
+async function resolveSchema (env, schema, timeout) {
+  const { channel } = env
+  let resolved = false
+  let resolution
 
-      _resolveSchema(schema.description);
+  // Send the initial message
+  await channel.send(schema.message)
+
+  while (!resolved) {
+    // Wait for a response
+    const response = await getResponse(env, timeout)
+    resolution = schema.parse(response)
+
+    // If the response did not validate, retry
+    const errorMessage = schema.validate(resolution)
+    if (errorMessage) {
+      await channel.send(errorMessage)
+    } else {
+      resolved = true
     }
+  }
 
-    // Resolve all schemas
-    return new Promise((resolve, reject) => {
-      async.series(
-        schemas.map(schema => resolveSchema.bind(null, schema)),
-        (err, results) => {
-          if (err) {
-            return reject(err);
-          }
+  return {
+    path: schema.path,
+    resolution
+  }
+}
 
-          const aggregate = {};
-          for (const result of results) {
-            aggregate[result.path] = result.response;
-          }
-          resolve(aggregate);
-        }
-      );
-    });
-  };
-};
+async function prompt (channel, user, schemas, options) {
+  options = Object.assign({}, defaultOptions, options)
+  const { timeout } = options
+  const env = { client: this, channel, user }
+  const aggregate = {}
 
-module.exports.formats = formats;
+  // Resolve all schemas into `aggregate`
+  for (const schema of createSchemas(schemas)) {
+    const { path, resolution } = await resolveSchema(env, schema, timeout)
+    aggregate[path] = resolution
+  }
+
+  return aggregate
+}
+
+module.exports = prompt
