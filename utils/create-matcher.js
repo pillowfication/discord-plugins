@@ -1,4 +1,8 @@
 function createMatcher (match) {
+  if (match === undefined) {
+    return
+  }
+
   const typeofMatch = typeof match
 
   if (typeofMatch === 'function') {

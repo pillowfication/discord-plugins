@@ -1,6 +1,8 @@
+const createMatcher = require('../utils/create-matcher')
 const createSchemas = require('./create-schemas')
 
 const defaultOptions = {
+  exit: undefined,
   timeout: 60 * 1000
 }
 
@@ -28,8 +30,9 @@ function getResponse (env, timeout) {
   })
 }
 
-async function resolveSchema (env, schema, timeout) {
+async function resolveSchema (env, schema, options) {
   const { channel } = env
+  const { exit, timeout } = options
   let resolved = false
   let resolution
 
@@ -39,10 +42,16 @@ async function resolveSchema (env, schema, timeout) {
   while (!resolved) {
     // Wait for a response
     const response = await getResponse(env, timeout)
-    resolution = schema.parse(response)
+
+    // If the exit condition occurred, throw
+    if (exit && exit(response)) {
+      throw new Error('Exited')
+    }
 
     // If the response did not validate, retry
+    resolution = schema.parse(response)
     const errorMessage = schema.validate(resolution)
+
     if (errorMessage) {
       await channel.send(errorMessage)
     } else {
@@ -58,13 +67,13 @@ async function resolveSchema (env, schema, timeout) {
 
 async function prompt (channel, user, schemas, options) {
   options = Object.assign({}, defaultOptions, options)
-  const { timeout } = options
+  options.exit = createMatcher(options.exit)
   const env = { client: this, channel, user }
   const aggregate = {}
 
   // Resolve all schemas into `aggregate`
   for (const schema of createSchemas(schemas)) {
-    const { path, resolution } = await resolveSchema(env, schema, timeout)
+    const { path, resolution } = await resolveSchema(env, schema, options)
     aggregate[path] = resolution
   }
 

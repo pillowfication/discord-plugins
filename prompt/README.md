@@ -1,23 +1,27 @@
 # prompt
 
 Adds the capability to prompt the user for a series of answers. Care should be
-added to make sure that at most only one prompt session is active at any time.
+added to make sure that at most only one prompt session is active at any time
+in a single channel.
 
-See [example.js](example.js)
+See [`example.js`](example.js).
 
 ## Options
 
 **Defaults:**
 ```js
 {
+  exit: undefined,
   timeout: 60 * 1000
 }
 ```
-
+ - `exit` (*Array|Function|RegExp|String|undefined*): A condition to terminate
+    a prompt session, or `undefined` for none. See
+    [`create-matcher.js`](../utils/create-matcher.js).
  - `timeout` *(Number)*: If no responses are made within `timeout`ms, then
     prompt exits with an error. A nonpositive `timeout` indicates no timeout.
 
-## async prompt (user, channel, schemas, [options])
+## async prompt (channel, user, schemas, [options])
 
 **Arguments**
 
@@ -38,17 +42,19 @@ A schema represents how to resolve a query. The steps of resolution are:
 
  1. Send user `description`.
  2. Wait for a *response*.
- 3. Parse *response* by
-    - If `type === 'string'`, use `response`
+ 3. (If *response* triggers the exit condition or no *response* was made before
+    `timeout`, throw)
+ 4. Parse *response* by
+    - If `type === 'string'`, use `String(response)`
     - If `type === 'number'`, use `Number(response)`
-    - If `type === 'integer'`, use `parseInt(response, 10)`
-    - If `type === 'array'`, use `response.split(separator)`
- 4. Pass parsed *response* through `before` to get *value*.
- 5. Validate *value* and get the *error* by
+    - If `type === 'integer'`, use `parseInt(response)`
+    - If `type === 'array'`, use `String(response).split(separator)`
+ 5. Pass parsed *response* through `before` to get *value*.
+ 6. Validate *value* and get the *error* by
     - If `validator` is defined, let *error* be `validator(value)`
     - Else, let *error* be `pattern(response) ? false : message`
- 6. If the *error* is not `false`, send the user *error* and go to 2.
- 7. Resolve with *value*.
+ 7. If the *error* is not `false`, send the user *error* and go to 2.
+ 8. Resolve with *value*.
 
 **Defaults:**
 ```js
@@ -75,11 +81,11 @@ A schema represents how to resolve a query. The steps of resolution are:
  - `before` *(Function)*: After the response is parsed, it is passed through
     this function before validation.
  - `pattern` *(Array|Function|RegExp|String)*: The pattern to use for
-    validation. See `utils/create-matcher.js`.
+    validation. See [`create-matcher.js`](../utils/create-matcher.js).
  - `message` *(StringResolvable)*: The message to send to requery the user if
     validation fails.
  - `validator` *(Function)*: Custom validator function. Overrides both `pattern`
-    and `message`. This function must return `false` if validation passes, or a
+    and `message`. This function must return falsy if validation passes, or a
     StringResolvable to use as `message` if validation fails.
 
 ## Examples
@@ -103,7 +109,7 @@ let schemas = [{
   message: 'That was not a valid age. Try again:'
 }]
 
-client.prompt(user, channel, schemas)
+client.prompt(channel, user, schemas)
   .then(results => {
     console.log(results.name)
     console.log(results.age)

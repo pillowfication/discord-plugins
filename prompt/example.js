@@ -49,14 +49,19 @@ const schemas = [{
 }]
 
 // This is to ensure that multiple prompts will not occur at once
-let inPrompt = false
+const promptChannels = {}
 
 client.on('message', message => {
-  if (message.content === '~/prompt' && !inPrompt) {
-    inPrompt = true
-    const channel = message.author.dmChannel || message.channel
+  if (message.content === '~/prompt') {
+    const channel = message.channel
 
-    client.prompt(channel, message.author, schemas, { timeout: 60 * 1000 })
+    if (promptChannels[channel.id]) {
+      return
+    } else {
+      promptChannels[channel.id] = true
+    }
+
+    client.prompt(channel, message.author, schemas, { exit: 'EXIT', timeout: 60 * 1000 })
       .then(result => channel.send(
         'You said...\n\n' +
         `- Name: \`${result.name}\`\n` +
@@ -65,10 +70,10 @@ client.on('message', message => {
         `- Colors: ${result.colors.map(color => `\`${color}\``).join(', ')}`
       ))
       .catch(err => channel.send(
-        err.message // Probably timed out
+        err.message // Probably timed out or exit condition reached
       ))
       .then(() => {
-        inPrompt = false
+        delete promptChannels[channel.id]
       })
   }
 })
