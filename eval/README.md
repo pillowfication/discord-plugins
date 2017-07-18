@@ -1,4 +1,4 @@
-# prompt
+# eval
 
 A class for executing JavaScript tailored for use in Discord.
 
