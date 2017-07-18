@@ -3,15 +3,16 @@ const vm = require('vm')
 
 const defaultOptions = {
   name: 'Discord',
-  timeout: 1 * 1000
+  timeout: 1 * 1000,
+  globals: {}
 }
 
 class DiscordVM {
-  constructor (globals = {}, options) {
+  constructor (options) {
     options = Object.assign({}, defaultOptions, options)
     this.name = options.name
     this.timeout = options.timeout
-    this.globals = globals
+    this.globals = options.globals
     this.reset()
   }
 
@@ -20,6 +21,8 @@ class DiscordVM {
   }
 
   eval (code, globals, timeout = this.timeout) {
+    const startTime = Date.now()
+
     // Reassign global variables
     Object.assign(this.context, globals)
 
@@ -56,7 +59,9 @@ class DiscordVM {
     // Prettify the result of execution
     let prettyOutput
     if (error) {
-      prettyOutput = error.message + '\n' + error.stack.join('\n')
+      prettyOutput = error.stack.length
+        ? error.message + '\n' + error.stack.join('\n')
+        : error.message
       if (error.line && error.column) {
         prettyOutput =
           code.split('\n')[error.line - 1] + '\n' +
@@ -67,7 +72,8 @@ class DiscordVM {
       prettyOutput = util.inspect(output, { depth: null })
     }
 
-    return { code, output, error, prettyOutput }
+    const timeElapsed = Date.now() - startTime
+    return { code, output, error, timeElapsed, prettyOutput }
   }
 }
 

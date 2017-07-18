@@ -8,13 +8,14 @@ See [`example.js`](example.js).
 
 ## Options
 
-**Defaults:**
+**Defaults**
 ```js
 {
   exit: undefined,
   timeout: 60 * 1000
 }
 ```
+
  - `exit` (*Array|Function|RegExp|String|undefined*): A condition to terminate
     a prompt session, or `undefined` for none. See
     [`create-matcher.js`](../utils/create-matcher.js).
@@ -56,7 +57,7 @@ A schema represents how to resolve a query. The steps of resolution are:
  7. If the *error* is not `false`, send the user *error* and go to 2.
  8. Resolve with *value*.
 
-**Defaults:**
+**Defaults**
 ```js
 {
   name: undefined,
