@@ -22,7 +22,7 @@ See [`example.js`](example.js).
  - `timeout` *(Number)*: If no responses are made within `timeout`ms, then
     prompt exits with an error. A nonpositive `timeout` indicates no timeout.
 
-## async prompt (channel, user, schemas, [options])
+## async prompt(channel, user, schemas, [options])
 
 **Arguments**
 

@@ -8,7 +8,7 @@ Note: The vm module is not a security mechanism. **Do not use it to run
 untrusted code.** Understand the risks of using this module. See
 [Node's VM module](https://nodejs.org/api/vm.html).
 
-## class eval.DiscordVM ([options])
+## class eval.DiscordVM([options])
 
 **Arguments**
 
@@ -28,7 +28,7 @@ untrusted code.** Understand the risks of using this module. See
     be overridden in `DiscordVM.eval()` calls.
  - `globals` (*Object*): *Undocumented*
 
-## discordVM.eval (code, [globals], [timeout])
+## discordVM.eval(code, [globals], [timeout])
 
 **Arguments**
 
@@ -56,7 +56,7 @@ untrusted code.** Understand the risks of using this module. See
       `util.inspect()`. If there was an error, the offending line and stack
       trace is returned.
 
-## discordVM.reset ()
+## discordVM.reset()
 
 A new context is created for the DiscordVM clearing out all variables, local
 and global.
