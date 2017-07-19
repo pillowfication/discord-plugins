@@ -1,6 +1,6 @@
 {
   "name": "discord-plugins",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Plugins for discord.js",
   "author": {
     "name": "Markus Tran",
