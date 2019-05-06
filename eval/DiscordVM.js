@@ -39,21 +39,28 @@ class DiscordVM {
         timeout
       })
     } catch (err) {
+      const vmErrorRegex = /^\s*([A-Za-z]*Error: .*)$/
       const vmStackRegex = new RegExp(`${this.name}:([0-9]+):([0-9]+)`)
       const rawStack = err.stack.split('\n')
+      const errorLines = rawStack.filter(line => vmErrorRegex.test(line))
+      const stackLines = rawStack.filter(line => vmStackRegex.test(line))
 
-      const message = rawStack[0]
-      const stack = rawStack.filter(desc => vmStackRegex.test(desc))
+      const message = errorLines[0] && errorLines[0].match(vmErrorRegex)[1]
 
       let line = null
       let column = null
-      const match = stack[0] && stack[0].match(vmStackRegex)
-      if (match) {
+      if (stackLines[0]) {
+        const match = stackLines[0].match(vmStackRegex)
         line = +match[1]
         column = +match[2]
       }
 
-      error = { message, stack, line, column }
+      error = {
+        message: message || 'UnknownError: Error could not be determined',
+        stack: stackLines,
+        line,
+        column
+      }
     }
 
     // Prettify the result of execution
