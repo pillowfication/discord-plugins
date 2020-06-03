@@ -20,7 +20,7 @@ client.on('message', message => {
     getContext(message.channel.id).reset()
     message.channel.send('Context reset.')
   } else if (message.content.startsWith('~/eval') /* && message.author.id === ID */) {
-    const match = message.content.match(/```(?:js\n)?(.*)```/)
+    const match = message.content.match(/```(?:js\b)?([\s\S]*)```/)
     if (match) {
       const context = getContext(message.channel.id)
       const code = match[1]

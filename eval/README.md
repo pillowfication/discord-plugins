@@ -34,6 +34,7 @@ untrusted code.** Understand the risks of using this module. See
 
  - `code` (*String*): JavaScript code to execute.
  - `globals` (*Object*): Set any global variables prior to executing.
+    **WARNING** - these variables will persist in the context.
  - `timeout` (*Number*): Maximum time in milliseconds to execute code.
 
 **Returns**
