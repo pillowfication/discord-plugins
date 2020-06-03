@@ -1,4 +1,5 @@
 module.exports = {
   eval: require('./eval'),
-  prompt: require('./prompt')
+  prompt: require('./prompt'),
+  jsonDb: require('./json-db')
 }
